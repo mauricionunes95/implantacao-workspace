@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hipcom — Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#161b27;--bg3:#1e2435;
+  --border:#2a3147;--border2:#38435c;
+  --text:#e8eaf2;--text2:#8b95b0;--text3:#4e5a73;
+  --accent:#4f7cff;--accent-bg:rgba(79,124,255,.12);--accent-bd:rgba(79,124,255,.35);
+  --green:#3ecf8e;--green-bg:rgba(62,207,142,.1);
+  --amber:#f5a623;--amber-bg:rgba(245,166,35,.1);
+  --red:#ff5f5f;--red-bg:rgba(255,95,95,.1);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);
+  --r:10px;--rsm:6px;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --sw:220px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100vh}
+
+/* CONFIG SCREEN */
+#config-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.config-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:32px;width:100%;max-width:460px}
+.config-box h1{font-size:20px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.config-box .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.config-box p{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+.config-step{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:14px;margin-bottom:10px}
+.config-step .step-num{font-size:10px;font-family:var(--mono);color:var(--accent);font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em}
+.config-step label{font-size:12px;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.config-step input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;font-size:13px;color:var(--text);font-family:var(--mono)}
+.config-step input:focus{outline:none;border-color:var(--accent-bd)}
+.config-step small{font-size:11px;color:var(--text3);margin-top:5px;display:block;line-height:1.5}
+.config-err{font-size:12px;color:var(--red);background:var(--red-bg);border:1px solid rgba(255,95,95,.2);border-radius:var(--rsm);padding:8px 12px;margin-bottom:10px;display:none}
+
+/* APP */
+.app{display:flex;height:100vh;overflow:hidden;display:none}
+.sidebar{width:var(--sw);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:10px;padding:0 20px;height:52px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* SIDEBAR */
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.sidebar-logo .name{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+.sidebar-logo small{font-size:11px;color:var(--text3);margin-top:2px;display:block}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:8px 16px 4px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 12px;margin:1px 6px;border-radius:var(--rsm);cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;position:relative}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent)}
+.nav-item.active::before{content:'';position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--accent);border-radius:2px}
+.nav-item i{font-size:16px;flex-shrink:0}
+.nav-badge{margin-left:auto;font-size:10px;font-family:var(--mono);background:var(--bg3);color:var(--text2);padding:1px 6px;border-radius:20px;border:1px solid var(--border)}
+.nav-badge.warn{background:var(--amber-bg);color:var(--amber);border-color:rgba(245,166,35,.3)}
+.sidebar-footer{margin-top:auto;padding:14px 12px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);line-height:1.6}
+.online-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle}
+
+/* TOPBAR */
+.topbar-title{font-size:14px;font-weight:500;flex:1;color:var(--text);display:flex;align-items:center;gap:8px}
+.topbar-title i{color:var(--text3)}
+.search-input{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:5px 10px 5px 30px;font-size:12px;color:var(--text);width:200px;font-family:var(--font);display:none}
+.search-input:focus{outline:none;border-color:var(--accent-bd)}
+.search-wrap{position:relative}
+.search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--rsm);font-size:12px;font-family:var(--font);cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg2);color:var(--text)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff;border-color:transparent}
+.btn-primary:hover{opacity:.88}
+.btn-danger{color:var(--red)}
+.btn-danger:hover{background:var(--red-bg);border-color:var(--red)}
+.btn-icon{padding:5px 7px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-title i{color:var(--text3)}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;text-align:center}
+.metric-val{font-size:24px;font-weight:600;font-family:var(--mono);line-height:1}
+.metric-lbl{font-size:11px;color:var(--text3);margin-top:5px}
+.v-blue{color:var(--accent)}.v-green{color:var(--green)}.v-amber{color:var(--amber)}.v-purple{color:var(--purple)}
+
+/* PILLS */
+.pill{font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.p-green{background:var(--green-bg);color:var(--green)}
+.p-blue{background:var(--accent-bg);color:var(--accent)}
+.p-amber{background:var(--amber-bg);color:var(--amber)}
+.p-red{background:var(--red-bg);color:var(--red)}
+.p-purple{background:var(--purple-bg);color:var(--purple)}
+.p-gray{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+
+/* PROGRESS */
+.bar-track{background:var(--bg3);border-radius:4px;height:5px;overflow:hidden}
+.bar-fill{height:5px;border-radius:4px;background:var(--accent);transition:width .4s}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* ROWS */
+.proj-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .12s}
+.proj-row:last-child{border:none}
+.proj-row:hover{opacity:.8}
+.proj-name{flex:1;font-size:13px;font-weight:500;color:var(--text)}
+.proj-meta{font-size:11px;color:var(--text3)}
+.proj-bar-wrap{width:80px;flex-shrink:0}
+.proj-pct{font-size:11px;color:var(--text3);margin-top:3px;text-align:right;font-family:var(--mono)}
+
+/* SECTION HDR */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-hdr h3{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.section-hdr h3 i{color:var(--text3)}
+
+/* FASE MINI */
+.fase-mini{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.fase-mini:last-child{border:none}
+.fase-mini-name{flex:1;color:var(--text2)}
+
+/* NOTA CARDS */
+.nota-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.nota-card:hover{border-color:var(--border2)}
+.nota-card-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+.nota-card-meta{font-size:11px;color:var(--text3)}
+.nota-card-preview{font-size:12px;color:var(--text2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* NOTA EDITOR */
+.nota-editor{display:flex;flex-direction:column;gap:10px}
+#nota-titulo{font-size:20px;font-weight:600;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);padding:6px 0;font-family:var(--font);width:100%;letter-spacing:-.02em}
+#nota-titulo:focus{outline:none;border-color:var(--accent-bd)}
+#nota-corpo{min-height:280px;resize:vertical;padding:14px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;line-height:1.8;background:var(--bg2);color:var(--text);font-family:var(--font);width:100%}
+#nota-corpo:focus{outline:none;border-color:var(--accent-bd)}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;font-size:13px;color:var(--text);font-family:var(--font);transition:border-color .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent-bd)}
+.form-group textarea{min-height:80px;resize:vertical}
+.form-group select option{background:var(--bg3)}
+
+/* TABLE */
+.db-table{width:100%;border-collapse:collapse;font-size:12px}
+.db-table th{text-align:left;padding:7px 10px;font-size:11px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);background:var(--bg3);font-family:var(--mono)}
+.db-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.db-table tr:last-child td{border:none}
+.db-table tr:hover td{background:var(--bg3)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;padding-top:60px;z-index:200}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:22px 24px;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5);animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;color:var(--text)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+
+/* FASE PROGRESS */
+.fase-prog-item{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;color:var(--text2)}
+.fase-prog-item label{width:120px;flex-shrink:0}
+.fase-prog-item input[type=range]{flex:1;accent-color:var(--accent)}
+.fase-prog-item span{width:36px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--accent)}
+
+/* TAG FILTER */
+.tag-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tag-btn{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all .15s}
+.tag-btn:hover{color:var(--text2);border-color:var(--border2)}
+.tag-btn.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-bd)}
+
+/* LOADING */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:.4}
+.empty-state p{font-size:13px;line-height:1.6}
+.loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);padding:20px 0}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rsm);padding:10px 16px;font-size:13px;color:var(--text);z-index:999;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:toastIn .2s ease;max-width:320px}
+.toast.success{border-color:rgba(62,207,142,.4)}
+.toast.error{border-color:rgba(255,95,95,.4);color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* FASE DETAIL */
+.fase-detail{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:8px}
+.fase-detail-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--bg2);transition:background .12s}
+.fase-detail-header:hover{background:var(--bg3)}
+.fase-detail-body{display:none;padding:12px 14px;background:var(--bg);border-top:1px solid var(--border)}
+.fase-detail-body.open{display:block}
+.chevron{transition:transform .2s;color:var(--text3);font-size:15px}
+.chevron.open{transform:rotate(180deg)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+</style>
+</head>
+<body>
+
+<!-- ── TELA DE CONFIGURAÇÃO ──────────────────────────────── -->
+<div id="config-screen">
+  <div class="config-box">
+    <h1><i class="ti ti-building-store"></i> Hipcom Workspace <div class="dot"></div></h1>
+    <p>Para conectar ao banco de dados compartilhado da equipe, insira as credenciais do Supabase. Você só faz isso uma vez — ficará salvo no navegador.</p>
+
+    <div class="config-step">
+      <div class="step-num">Passo 1 — Supabase Project URL</div>
+      <label>Project URL</label>
+      <input type="text" id="cfg-url" placeholder="https://xxxxxxxxxxx.supabase.co">
+      <small>Supabase → seu projeto → Settings → API → Project URL</small>
+    </div>
+
+    <div class="config-step">
+      <div class="step-num">Passo 2 — Supabase Anon Key</div>
+      <label>Anon / Public Key</label>
+      <input type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      <small>Supabase → Settings → API → anon public (não é a service_role key)</small>
+    </div>
+
+    <div class="config-err" id="cfg-err"></div>
+
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="conectar()">
+      <i class="ti ti-plug-connected"></i> Conectar e abrir workspace
+    </button>
+
+    <p style="font-size:11px;color:var(--text3);margin-top:12px;text-align:center">
+      Não tem conta Supabase? Veja o guia PASSO-A-PASSO.md incluído no projeto.
+    </p>
+  </div>
+</div>
+
+<!-- ── APP PRINCIPAL ──────────────────────────────── -->
+<div class="app" id="app-main">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="name"><i class="ti ti-building-store"></i> Hipcom <div class="dot"></div></div>
+      <small>Workspace da equipe</small>
+    </div>
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+    <div class="nav-item" onclick="nav('projetos',this)"><i class="ti ti-briefcase"></i> Projetos <span class="nav-badge" id="badge-proj">0</span></div>
+    <div class="nav-item" onclick="nav('notas',this)"><i class="ti ti-notes"></i> Anotações <span class="nav-badge" id="badge-notas">0</span></div>
+    <div class="nav-section">Banco de dados</div>
+    <div class="nav-item" onclick="nav('clientes',this)"><i class="ti ti-building"></i> Clientes</div>
+    <div class="nav-item" onclick="nav('pendencias',this)"><i class="ti ti-alert-triangle"></i> Pendências <span class="nav-badge warn" id="badge-pend">0</span></div>
+    <div class="nav-item" onclick="nav('parametros',this)"><i class="ti ti-database"></i> Base de Conhecimento</div>
+    <div class="sidebar-footer">
+      <span class="online-dot"></span> Conectado ao Supabase<br>
+      <span style="color:var(--text3)">Dados sincronizados em tempo real</span><br><br>
+      <button class="btn btn-icon" onclick="desconectar()" style="font-size:11px;padding:4px 8px">
+        <i class="ti ti-logout"></i> Trocar conexão
+      </button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
+      <div class="search-wrap">
+        <i class="ti ti-search search-icon"></i>
+        <input type="text" class="search-input" id="search-input" placeholder="Buscar..." oninput="doSearch(this.value)">
+      </div>
+      <button class="btn" onclick="toggleSearch()"><i class="ti ti-search"></i></button>
+      <button class="btn btn-primary" id="btn-add" onclick="openAdd()" style="display:none"><i class="ti ti-plus"></i> Novo</button>
+    </div>
+
+    <div class="content" id="content">
+      <div class="page active" id="page-dashboard">
+        <div class="metrics">
+          <div class="metric"><div class="metric-val v-blue" id="m-total">—</div><div class="metric-lbl">Projetos ativos</div></div>
+          <div class="metric"><div class="metric-val v-amber" id="m-pend">—</div><div class="metric-lbl">Pendências</div></div>
+          <div class="metric"><div class="metric-val v-green" id="m-golive">—</div><div class="metric-lbl">Encerrados</div></div>
+          <div class="metric"><div class="metric-val v-purple" id="m-notas">—</div><div class="metric-lbl">Anotações</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-briefcase"></i> Projetos em andamento</div>
+          <div id="dash-projetos"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-alert-triangle"></i> Pendências recentes</div>
+          <div id="dash-pends"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
+        </div>
+      </div>
+      <div class="page" id="page-projetos"><div id="proj-lista"></div></div>
+      <div class="page" id="page-projeto-detail"><div id="proj-detail-content"></div></div>
+      <div class="page" id="page-notas">
+        <div class="tag-filter">
+          <button class="tag-btn active" onclick="filterNotas('todos',this)">Todos</button>
+          <button class="tag-btn" onclick="filterNotas('reuniao',this)"><i class="ti ti-users"></i> Reunião</button>
+          <button class="tag-btn" onclick="filterNotas('tecnico',this)"><i class="ti ti-settings-2"></i> Técnico</button>
+          <button class="tag-btn" onclick="filterNotas('fiscal',this)"><i class="ti ti-receipt"></i> Fiscal</button>
+          <button class="tag-btn" onclick="filterNotas('treinamento',this)"><i class="ti ti-school"></i> Treinamento</button>
+          <button class="tag-btn" onclick="filterNotas('geral',this)"><i class="ti ti-notes"></i> Geral</button>
+        </div>
+        <div id="notas-lista"></div>
+      </div>
+      <div class="page" id="page-nota-editor">
+        <div class="nota-editor">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            <button class="btn" onclick="backToNotas()"><i class="ti ti-arrow-left"></i> Voltar</button>
+            <select id="nota-tipo" style="font-size:12px;padding:5px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font)">
+              <option value="reuniao">Reunião</option><option value="tecnico">Técnico</option>
+              <option value="fiscal">Fiscal</option><option value="treinamento">Treinamento</option>
+              <option value="geral">Geral</option>
+            </select>
+            <select id="nota-projeto" style="font-size:12px;padding:5px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font)"></select>
+            <button class="btn btn-primary" onclick="saveNota()" style="margin-left:auto"><i class="ti ti-device-floppy"></i> Salvar</button>
+            <button class="btn btn-icon btn-danger" onclick="deleteNota()" title="Excluir"><i class="ti ti-trash"></i></button>
+          </div>
+          <input type="text" id="nota-titulo" placeholder="Título da anotação...">
+          <textarea id="nota-corpo" placeholder="Escreva aqui..."></textarea>
+          <div style="font-size:11px;color:var(--text3)" id="nota-meta"></div>
+        </div>
+      </div>
+      <div class="page" id="page-clientes"><div id="clientes-content"></div></div>
+      <div class="page" id="page-pendencias"><div id="pendencias-content"></div></div>
+      <div class="page" id="page-parametros"><div id="parametros-content"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE ──────────────────────────────────────────────────────
+const { createClient } = supabase;
+let sb = null;
+
+const CFG_URL_KEY = 'hc_sb_url';
+const CFG_KEY_KEY = 'hc_sb_key';
+
+function conectar(){
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  const err = document.getElementById('cfg-err');
+  err.style.display = 'none';
+  if(!url || !key){ err.textContent = 'Preencha os dois campos.'; err.style.display='block'; return; }
+  if(!url.startsWith('https://')){ err.textContent = 'URL inválida. Deve começar com https://'; err.style.display='block'; return; }
+  try{
+    sb = createClient(url, key);
+    localStorage.setItem(CFG_URL_KEY, url);
+    localStorage.setItem(CFG_KEY_KEY, key);
+    iniciarApp();
+  } catch(e){
+    err.textContent = 'Erro ao conectar: ' + e.message;
+    err.style.display = 'block';
+  }
+}
+
+function desconectar(){
+  localStorage.removeItem(CFG_URL_KEY);
+  localStorage.removeItem(CFG_KEY_KEY);
+  sb = null;
+  document.getElementById('app-main').style.display = 'none';
+  document.getElementById('config-screen').style.display = 'flex';
+}
+
+function tentarAutoConectar(){
+  const url = localStorage.getItem(CFG_URL_KEY);
+  const key = localStorage.getItem(CFG_KEY_KEY);
+  if(url && key){
+    document.getElementById('cfg-url').value = url;
+    document.getElementById('cfg-key').value = key;
+    sb = createClient(url, key);
+    iniciarApp();
+    return true;
+  }
+  return false;
+}
+
+function iniciarApp(){
+  document.getElementById('config-screen').style.display = 'none';
+  document.getElementById('app-main').style.display = 'flex';
+  loadAll();
+}
+
+// ── STATE ──────────────────────────────────────────────────────
+let S = { projetos:[], notas:[], clientes:[], pend:[], param:[], editingNota:null, currentPage:'dashboard', filterNota:'todos', searchQ:'' };
+let editingId = null;
+
+function uid(){ return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function fmt(d){ return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
+function pct(v){ return Math.round(v)+'%'; }
+function segLabel(s){ return {supermercado:'Supermercado',farmacia:'Farmácia',perfumaria:'Perfumaria',petshop:'Petshop',outro:'Outro'}[s]||s; }
+function segIcon(s){ return {supermercado:'ti-shopping-cart',farmacia:'ti-pill',perfumaria:'ti-sparkles',petshop:'ti-paw',outro:'ti-briefcase'}[s]||'ti-briefcase'; }
+function statusPill(s){ return {levantamento:['p-blue','Levantamento'],parametrizacao:['p-amber','Parametrização'],homologacao:['p-amber','Homologação'],treinamento:['p-purple','Treinamento'],golive:['p-green','Go-live'],encerrado:['p-gray','Encerrado'],pausado:['p-gray','Pausado']}[s]||['p-gray',s]; }
+function tipoLabel(t){ return {reuniao:'Reunião',tecnico:'Técnico',fiscal:'Fiscal',treinamento:'Treinamento',geral:'Geral'}[t]||t; }
+function calcProg(p){ if(!p.fases) return 0; const v=Object.values(p.fases); return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0; }
+
+function toast(msg, type='success'){
+  const t = document.createElement('div');
+  t.className = 'toast '+(type);
+  t.innerHTML = `<i class="ti ti-${type==='success'?'check':'alert-circle'}"></i> ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+// ── LOAD ALL ──────────────────────────────────────────────────────
+async function loadAll(){
+  try{
+    const [p,n,c,pnd,pm] = await Promise.all([
+      sb.from('projetos').select('*').order('criado_em',{ascending:false}),
+      sb.from('notas').select('*').order('atualizado_em',{ascending:false}),
+      sb.from('clientes').select('*').order('nome'),
+      sb.from('pendencias').select('*').order('criado_em',{ascending:false}),
+      sb.from('base_conhecimento').select('*').order('categoria'),
+    ]);
+    S.projetos = p.data||[]; S.notas = n.data||[]; S.clientes = c.data||[];
+    S.pend = pnd.data||[]; S.param = pm.data||[];
+    updateBadges(); renderDashboard();
+    const map = {projetos:renderProjetos,notas:renderNotas,clientes:renderClientes,pendencias:renderPendencias,parametros:renderParametros};
+    if(map[S.currentPage]) map[S.currentPage]();
+  } catch(e){ toast('Erro ao carregar dados: '+e.message,'error'); }
+}
+
+function updateBadges(){
+  const ativo = S.projetos.filter(p=>p.status!=='encerrado'&&p.status!=='pausado').length;
+  const pendA = S.pend.filter(p=>p.status==='aberto').length;
+  document.getElementById('badge-proj').textContent  = ativo;
+  document.getElementById('badge-notas').textContent = S.notas.length;
+  document.getElementById('badge-pend').textContent  = pendA;
+  document.getElementById('m-total').textContent  = ativo;
+  document.getElementById('m-pend').textContent   = pendA;
+  document.getElementById('m-golive').textContent = S.projetos.filter(p=>p.status==='encerrado').length;
+  document.getElementById('m-notas').textContent  = S.notas.length;
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────
+function renderDashboard(){
+  const ativos = S.projetos.filter(p=>p.status!=='encerrado'&&p.status!=='pausado');
+  const el = document.getElementById('dash-projetos');
+  el.innerHTML = ativos.length ? ativos.map(p=>{
+    const [cls,lbl]=statusPill(p.status); const prog=calcProg(p);
+    return `<div class="proj-row" onclick="openDetalhe('${p.id}')">
+      <i class="ti ${segIcon(p.segmento)}" style="color:var(--text3);font-size:16px"></i>
+      <span class="proj-name">${p.nome}</span>
+      <span class="proj-meta">${segLabel(p.segmento)} · ${p.uf||''}</span>
+      <span class="pill ${cls}">${lbl}</span>
+      <div class="proj-bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${prog}%"></div></div><div class="proj-pct">${prog}%</div></div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><i class="ti ti-briefcase"></i><p>Nenhum projeto ainda.</p></div>';
+  const pends = S.pend.filter(p=>p.status==='aberto').slice(0,5);
+  const ep = document.getElementById('dash-pends');
+  ep.innerHTML = pends.length ? pends.map(p=>{
+    const proj=S.projetos.find(x=>x.id===p.projeto_id);
+    return `<div class="fase-mini"><i class="ti ti-alert-triangle" style="color:var(--amber);font-size:14px"></i><span class="fase-mini-name">${p.descricao}</span><span style="font-size:11px;color:var(--text3)">${proj?proj.nome:''}</span><span style="font-size:11px;color:var(--text2)">${p.responsavel||''}</span></div>`;
+  }).join('') : '<div class="empty-state"><i class="ti ti-check"></i><p>Nenhuma pendência.</p></div>';
+}
+
+// ── PROJETOS ──────────────────────────────────────────────────────
+function renderProjetos(){
+  const el=document.getElementById('proj-lista');
+  const q=S.searchQ.toLowerCase();
+  const list=S.projetos.filter(p=>!q||p.nome.toLowerCase().includes(q));
+  el.innerHTML = list.length ? list.map(p=>{
+    const [cls,lbl]=statusPill(p.status); const prog=calcProg(p);
+    return `<div class="card" style="cursor:pointer" onclick="openDetalhe('${p.id}')">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <i class="ti ${segIcon(p.segmento)}" style="color:var(--text3);font-size:20px"></i>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;color:var(--text)">${p.nome}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${segLabel(p.segmento)} · ${p.cidade||''} ${p.uf||''} · Resp: ${p.responsavel||'—'}</div>
+        </div>
+        <span class="pill ${cls}">${lbl}</span>
+        <div style="display:flex;gap:4px" onclick="event.stopPropagation()">
+          <button class="btn btn-icon" onclick="openEditProj('${p.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-icon btn-danger" onclick="delProj('${p.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${prog}%"></div></div>
+        <span style="font-size:12px;font-family:var(--mono);color:var(--accent)">${prog}%</span>
+        <span style="font-size:11px;color:var(--text3)">Início: ${fmt(p.data_inicio)} · Go-live: ${fmt(p.data_golive)}</span>
+      </div>
+      ${p.obs?`<div style="margin-top:10px;font-size:12px;color:var(--text2);border-top:1px solid var(--border);padding-top:10px">${p.obs}</div>`:''}
+    </div>`;
+  }).join('') : '<div class="empty-state"><i class="ti ti-briefcase"></i><p>Nenhum projeto. Clique em <strong>Novo</strong>.</p></div>';
+}
+
+function openDetalhe(id){
+  const p=S.projetos.find(x=>x.id===id); if(!p) return;
+  nav('projeto-detail',null,`<i class="ti ${segIcon(p.segmento)}"></i> ${p.nome}`);
+  const [cls,lbl]=statusPill(p.status); const prog=calcProg(p);
+  const fases=['levantamento','parametrizacao','homologacao','treinamento','golive'];
+  const faseLbl=['Levantamento','Parametrização','Homologação','Treinamento','Go-live'];
+  const faseProg=fases.map((f,i)=>{const v=p.fases?p.fases[f]||0:0;return`<div class="fase-prog-item"><label>${faseLbl[i]}</label><input type="range" min="0" max="100" step="5" value="${v}" oninput="updFase('${id}','${f}',this.value,this.nextElementSibling)"><span>${pct(v)}</span></div>`;}).join('');
+  const notasPrj=S.notas.filter(n=>n.projeto_id===id);
+  const pendsPrj=S.pend.filter(n=>n.projeto_id===id&&n.status==='aberto');
+  document.getElementById('proj-detail-content').innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn" onclick="nav('projetos',document.querySelectorAll('.nav-item')[1])"><i class="ti ti-arrow-left"></i> Projetos</button>
+      <button class="btn" onclick="openEditProj('${id}')"><i class="ti ti-edit"></i> Editar</button>
+      <button class="btn" onclick="openAddPend('${id}')"><i class="ti ti-plus"></i> Pendência</button>
+      <button class="btn" onclick="newNotaProj('${id}')"><i class="ti ti-notes"></i> Anotação</button>
+    </div>
+    <div class="metrics"><div class="metric"><div class="metric-val v-blue">${prog}%</div><div class="metric-lbl">Progresso</div></div><div class="metric"><div class="metric-val v-amber">${pendsPrj.length}</div><div class="metric-lbl">Pendências</div></div><div class="metric"><div class="metric-val v-purple">${notasPrj.length}</div><div class="metric-lbl">Anotações</div></div><div class="metric"><div class="metric-val" style="font-size:14px;color:var(--text2)">${fmt(p.data_golive)}</div><div class="metric-lbl">Go-live</div></div></div>
+    <div class="card"><div class="card-title"><i class="ti ti-chart-bar"></i> Progresso por fase <span class="pill ${cls}" style="margin-left:auto">${lbl}</span></div><div id="fp-${id}">${faseProg}</div><button class="btn btn-primary" onclick="saveFases('${id}')" style="margin-top:8px"><i class="ti ti-device-floppy"></i> Salvar progresso</button></div>
+    <div class="card"><div class="section-hdr"><h3><i class="ti ti-alert-triangle"></i> Pendências</h3><button class="btn" onclick="openAddPend('${id}')"><i class="ti ti-plus"></i> Nova</button></div><div id="detail-pends-${id}">${renderPendsDetail(id)}</div></div>
+    <div class="card"><div class="section-hdr"><h3><i class="ti ti-notes"></i> Anotações</h3><button class="btn" onclick="newNotaProj('${id}')"><i class="ti ti-plus"></i> Nova</button></div>
+      ${notasPrj.length?notasPrj.map(n=>`<div class="nota-card" onclick="openNota('${n.id}')"><div style="display:flex;align-items:center;gap:8px"><span class="nota-card-title" style="flex:1">${n.titulo||'(sem título)'}</span><span class="pill p-blue" style="font-size:10px">${tipoLabel(n.tipo)}</span></div><div class="nota-card-meta">${fmt(n.atualizado_em)}</div><div class="nota-card-preview">${(n.corpo||'').slice(0,100)}</div></div>`).join(''):'<div class="empty-state" style="padding:20px"><i class="ti ti-notes"></i><p>Nenhuma anotação.</p></div>'}
+    </div>`;
+}
+
+function renderPendsDetail(projId){
+  const list=S.pend.filter(p=>p.projeto_id===projId&&p.status==='aberto');
+  return list.length?list.map(p=>`<div class="fase-mini"><i class="ti ti-alert-triangle" style="color:var(--amber);font-size:14px"></i><span class="fase-mini-name">${p.descricao}</span><span style="font-size:11px;color:var(--text2)">${p.responsavel||''}</span><button class="btn" style="font-size:11px;padding:3px 8px" onclick="closePend('${p.id}','${projId}')"><i class="ti ti-check"></i> Resolver</button></div>`).join(''):'<div class="empty-state" style="padding:16px"><i class="ti ti-check"></i><p>Sem pendências.</p></div>';
+}
+
+function updFase(projId,fase,val,span){ span.textContent=pct(parseInt(val)); }
+
+async function saveFases(projId){
+  const p=S.projetos.find(x=>x.id===projId); if(!p) return;
+  if(!p.fases) p.fases={};
+  ['levantamento','parametrizacao','homologacao','treinamento','golive'].forEach(f=>{
+    const el=document.querySelector(`#fp-${projId} input[oninput*="'${f}'"]`);
+    if(el) p.fases[f]=parseInt(el.value);
+  });
+  const {error}=await sb.from('projetos').update({fases:p.fases}).eq('id',projId);
+  if(error){ toast('Erro ao salvar: '+error.message,'error'); return; }
+  toast('Progresso salvo!'); updateBadges(); renderDashboard();
+}
+
+// ── NOTAS ──────────────────────────────────────────────────────
+function renderNotas(){
+  const el=document.getElementById('notas-lista');
+  const q=S.searchQ.toLowerCase();
+  let list=S.notas;
+  if(S.filterNota!=='todos') list=list.filter(n=>n.tipo===S.filterNota);
+  if(q) list=list.filter(n=>(n.titulo||'').toLowerCase().includes(q)||(n.corpo||'').toLowerCase().includes(q));
+  el.innerHTML=list.length?list.map(n=>{
+    const proj=S.projetos.find(p=>p.id===n.projeto_id);
+    return `<div class="nota-card" onclick="openNota('${n.id}')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <span class="nota-card-title" style="flex:1">${n.titulo||'(sem título)'}</span>
+        <span class="pill p-blue" style="font-size:10px">${tipoLabel(n.tipo)}</span>
+        <button class="btn btn-icon btn-danger" onclick="event.stopPropagation();delNota('${n.id}')"><i class="ti ti-trash"></i></button>
+      </div>
+      <div class="nota-card-meta">${proj?proj.nome+' · ':''}${fmt(n.atualizado_em)}</div>
+      <div class="nota-card-preview">${(n.corpo||'').slice(0,120)}</div>
+    </div>`;
+  }).join(''):'<div class="empty-state"><i class="ti ti-notes"></i><p>Nenhuma anotação.</p></div>';
+}
+
+function openNota(id){
+  S.editingNota=id;
+  const n=S.notas.find(x=>x.id===id)||{};
+  nav('nota-editor',null,'<i class="ti ti-notes"></i> Anotação');
+  document.getElementById('nota-titulo').value=n.titulo||'';
+  document.getElementById('nota-corpo').value=n.corpo||'';
+  document.getElementById('nota-tipo').value=n.tipo||'geral';
+  const sel=document.getElementById('nota-projeto');
+  sel.innerHTML='<option value="">— Sem projeto —</option>'+S.projetos.map(p=>`<option value="${p.id}"${p.id===n.projeto_id?' selected':''}>${p.nome}</option>`).join('');
+  document.getElementById('nota-meta').textContent=n.atualizado_em?'Última edição: '+fmt(n.atualizado_em):'Nova anotação';
+}
+
+function newNotaProj(projId){
+  S.editingNota='__new__';
+  nav('nota-editor',null,'<i class="ti ti-notes"></i> Nova anotação');
+  document.getElementById('nota-titulo').value='';
+  document.getElementById('nota-corpo').value='';
+  document.getElementById('nota-tipo').value='reuniao';
+  const sel=document.getElementById('nota-projeto');
+  sel.innerHTML='<option value="">— Sem projeto —</option>'+S.projetos.map(p=>`<option value="${p.id}"${p.id===projId?' selected':''}>${p.nome}</option>`).join('');
+  document.getElementById('nota-meta').textContent='Nova anotação';
+}
+
+async function saveNota(){
+  const titulo=document.getElementById('nota-titulo').value.trim();
+  const corpo=document.getElementById('nota-corpo').value.trim();
+  const tipo=document.getElementById('nota-tipo').value;
+  const projId=document.getElementById('nota-projeto').value||null;
+  let error;
+  if(S.editingNota&&S.editingNota!=='__new__'){
+    ({error}=await sb.from('notas').update({titulo,corpo,tipo,projeto_id:projId}).eq('id',S.editingNota));
+  } else {
+    ({error}=await sb.from('notas').insert({titulo,corpo,tipo,projeto_id:projId}));
+  }
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Anotação salva!'); await loadAll(); backToNotas();
+}
+
+async function deleteNota(){
+  if(!S.editingNota||S.editingNota==='__new__'){ backToNotas(); return; }
+  if(!confirm('Excluir esta anotação?')) return;
+  await sb.from('notas').delete().eq('id',S.editingNota);
+  toast('Anotação excluída.'); await loadAll(); backToNotas();
+}
+
+async function delNota(id){
+  if(!confirm('Excluir esta anotação?')) return;
+  await sb.from('notas').delete().eq('id',id);
+  toast('Excluída.'); await loadAll();
+}
+
+function backToNotas(){ S.editingNota=null; nav('notas',document.querySelectorAll('.nav-item')[2]); }
+function filterNotas(tipo,btn){ S.filterNota=tipo; document.querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderNotas(); }
+
+// ── CLIENTES ──────────────────────────────────────────────────────
+function renderClientes(){
+  const el=document.getElementById('clientes-content');
+  el.innerHTML=`<div class="section-hdr"><h3><i class="ti ti-building"></i> Clientes</h3><button class="btn btn-primary" onclick="openAddCliente()"><i class="ti ti-plus"></i> Novo</button></div>`;
+  el.innerHTML+=S.clientes.length?`<div style="overflow-x:auto"><table class="db-table"><thead><tr><th>Nome</th><th>Segmento</th><th>UF</th><th>Contato</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead><tbody>${S.clientes.map(c=>`<tr><td title="${c.nome}">${c.nome}</td><td>${segLabel(c.segmento)}</td><td>${c.uf||''}</td><td>${c.contato||'—'}</td><td>${c.telefone||'—'}</td><td>${c.email||'—'}</td><td><button class="btn btn-icon btn-danger" onclick="delCliente('${c.id}')"><i class="ti ti-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><i class="ti ti-building"></i><p>Nenhum cliente cadastrado.</p></div>';
+}
+
+function openAddCliente(){
+  showModal('Novo cliente',`<div class="form-grid">
+    <div class="form-group form-full"><label>Nome *</label><input type="text" id="fc-nome" placeholder="Razão social"></div>
+    <div class="form-group"><label>Segmento</label><select id="fc-seg"><option value="supermercado">Supermercado</option><option value="farmacia">Farmácia</option><option value="perfumaria">Perfumaria</option><option value="petshop">Petshop</option><option value="outro">Outro</option></select></div>
+    <div class="form-group"><label>UF</label><select id="fc-uf"><option value="SP">SP</option><option value="MT">MT</option><option value="RJ">RJ</option><option value="Outro">Outro</option></select></div>
+    <div class="form-group"><label>Contato</label><input type="text" id="fc-contato"></div>
+    <div class="form-group"><label>Telefone</label><input type="text" id="fc-tel"></div>
+    <div class="form-group form-full"><label>E-mail</label><input type="text" id="fc-email"></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveCliente()"><i class="ti ti-device-floppy"></i> Salvar</button>`);
+}
+
+async function saveCliente(){
+  const nome=document.getElementById('fc-nome').value.trim();
+  if(!nome){ alert('Informe o nome.'); return; }
+  const {error}=await sb.from('clientes').insert({nome,segmento:document.getElementById('fc-seg').value,uf:document.getElementById('fc-uf').value,contato:document.getElementById('fc-contato').value,telefone:document.getElementById('fc-tel').value,email:document.getElementById('fc-email').value});
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Cliente salvo!'); await loadAll(); closeModal();
+}
+
+async function delCliente(id){
+  if(!confirm('Excluir cliente?')) return;
+  await sb.from('clientes').delete().eq('id',id);
+  toast('Cliente excluído.'); await loadAll();
+}
+
+// ── PENDÊNCIAS ──────────────────────────────────────────────────────
+function renderPendencias(){
+  const el=document.getElementById('pendencias-content');
+  const abertas=S.pend.filter(p=>p.status==='aberto');
+  const resolvidas=S.pend.filter(p=>p.status==='resolvido');
+  el.innerHTML=`<div class="section-hdr"><h3><i class="ti ti-alert-triangle"></i> Pendências <span class="pill p-amber" style="margin-left:4px">${abertas.length}</span></h3><button class="btn btn-primary" onclick="openAddPend(null)"><i class="ti ti-plus"></i> Nova</button></div>`;
+  el.innerHTML+=abertas.length?`<div class="card">${abertas.map(p=>{const proj=S.projetos.find(x=>x.id===p.projeto_id);return`<div class="fase-mini"><i class="ti ti-alert-triangle" style="color:var(--amber);font-size:14px"></i><span class="fase-mini-name">${p.descricao}</span><span style="font-size:11px;color:var(--text2);min-width:100px">${proj?proj.nome:''}</span><span style="font-size:11px;color:var(--text3);min-width:80px">${p.responsavel||''}</span><button class="btn" style="font-size:11px;padding:3px 8px" onclick="closePend('${p.id}',null)"><i class="ti ti-check"></i> Resolver</button></div>`;}).join('')}</div>`:'<div class="empty-state"><i class="ti ti-check"></i><p>Nenhuma pendência!</p></div>';
+  if(resolvidas.length) el.innerHTML+=`<div class="section-hdr" style="margin-top:12px"><h3 style="color:var(--text3)"><i class="ti ti-check"></i> Resolvidas (${resolvidas.length})</h3></div><div class="card">${resolvidas.slice(-8).reverse().map(p=>`<div class="fase-mini" style="opacity:.45"><i class="ti ti-check" style="color:var(--green);font-size:14px"></i><span class="fase-mini-name" style="text-decoration:line-through">${p.descricao}</span></div>`).join('')}</div>`;
+}
+
+function openAddPend(projId){
+  showModal('Nova pendência',`<div class="form-grid">
+    <div class="form-group form-full"><label>Projeto</label><select id="fp-proj"><option value="">— Sem projeto —</option>${S.projetos.map(p=>`<option value="${p.id}"${p.id===projId?' selected':''}>${p.nome}</option>`).join('')}</select></div>
+    <div class="form-group form-full"><label>Descrição *</label><textarea id="fp-desc" placeholder="Descreva a pendência..."></textarea></div>
+    <div class="form-group form-full"><label>Responsável</label><input type="text" id="fp-resp"></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="savePend()"><i class="ti ti-device-floppy"></i> Salvar</button>`);
+}
+
+async function savePend(){
+  const desc=document.getElementById('fp-desc').value.trim();
+  if(!desc){ alert('Descreva a pendência.'); return; }
+  const projId=document.getElementById('fp-proj').value||null;
+  const {error}=await sb.from('pendencias').insert({projeto_id:projId,descricao:desc,responsavel:document.getElementById('fp-resp').value,status:'aberto'});
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Pendência criada!'); await loadAll(); closeModal();
+  const dp=document.getElementById(`detail-pends-${projId}`);
+  if(dp) dp.innerHTML=renderPendsDetail(projId);
+}
+
+async function closePend(id,projId){
+  await sb.from('pendencias').update({status:'resolvido'}).eq('id',id);
+  toast('Pendência resolvida!'); await loadAll();
+  const dp=document.getElementById(`detail-pends-${projId}`);
+  if(dp) dp.innerHTML=renderPendsDetail(projId);
+}
+
+// ── BASE CONHECIMENTO ──────────────────────────────────────────────────────
+function renderParametros(){
+  const el=document.getElementById('parametros-content');
+  el.innerHTML=`<div class="section-hdr"><h3><i class="ti ti-database"></i> Base de Conhecimento</h3><button class="btn btn-primary" onclick="openAddParam()"><i class="ti ti-plus"></i> Novo</button></div><p style="font-size:12px;color:var(--text3);margin-bottom:14px">Parâmetros, configurações fiscais, soluções de erros e conhecimento técnico reutilizável.</p>`;
+  if(!S.param.length){ el.innerHTML+='<div class="empty-state"><i class="ti ti-database"></i><p>Nenhum registro ainda.</p></div>'; return; }
+  const cats=[...new Set(S.param.map(p=>p.categoria))];
+  cats.forEach(cat=>{
+    const items=S.param.filter(p=>p.categoria===cat);
+    el.innerHTML+=`<div class="card"><div class="card-title"><i class="ti ti-folder"></i> ${cat} <span style="font-size:11px;color:var(--text3);font-weight:400;margin-left:4px">${items.length} registros</span></div>${items.map(p=>`<div class="fase-detail" style="margin-bottom:8px"><div class="fase-detail-header" onclick="toggleFD(this)"><i class="ti ti-file-text" style="color:var(--text3);font-size:15px"></i><span style="flex:1;font-size:13px;font-weight:500;color:var(--text)">${p.titulo}</span><button class="btn btn-icon btn-danger" onclick="event.stopPropagation();delParam('${p.id}')"><i class="ti ti-trash"></i></button><i class="ti ti-chevron-down chevron"></i></div><div class="fase-detail-body"><pre style="font-size:12px;color:var(--text2);white-space:pre-wrap;line-height:1.7;font-family:var(--font)">${p.conteudo}</pre></div></div>`).join('')}</div>`;
+  });
+}
+
+function toggleFD(hdr){ const b=hdr.nextElementSibling,c=hdr.querySelector('.chevron'),o=b.classList.contains('open'); b.classList.toggle('open',!o); if(c)c.classList.toggle('open',!o); }
+
+function openAddParam(){
+  showModal('Novo registro',`<div class="form-grid">
+    <div class="form-group form-full"><label>Título *</label><input type="text" id="fp2-titulo" placeholder="Ex: ST-SP alíquota ICMS leite"></div>
+    <div class="form-group form-full"><label>Categoria</label><select id="fp2-cat"><option>Fiscal</option><option>Parametrização</option><option>Integração</option><option>PDV</option><option>Estoque</option><option>Treinamento</option><option>Erro comum</option><option>Go-live</option><option>Geral</option></select></div>
+    <div class="form-group form-full"><label>Conteúdo</label><textarea id="fp2-cont" style="min-height:120px"></textarea></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveParam()"><i class="ti ti-device-floppy"></i> Salvar</button>`);
+}
+
+async function saveParam(){
+  const titulo=document.getElementById('fp2-titulo').value.trim();
+  if(!titulo){ alert('Informe o título.'); return; }
+  const {error}=await sb.from('base_conhecimento').insert({titulo,categoria:document.getElementById('fp2-cat').value,conteudo:document.getElementById('fp2-cont').value});
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Registro salvo!'); await loadAll(); closeModal();
+}
+
+async function delParam(id){
+  if(!confirm('Excluir?')) return;
+  await sb.from('base_conhecimento').delete().eq('id',id);
+  toast('Excluído.'); await loadAll();
+}
+
+// ── PROJ FORM ──────────────────────────────────────────────────────
+function projForm(p){
+  return `<div class="form-grid">
+    <div class="form-group form-full"><label>Nome *</label><input type="text" id="f-nome" value="${p.nome||''}" placeholder="Ex: Supermercado Central Ltda"></div>
+    <div class="form-group"><label>Segmento</label><select id="f-seg"><option value="supermercado"${p.segmento==='supermercado'?' selected':''}>Supermercado</option><option value="farmacia"${p.segmento==='farmacia'?' selected':''}>Farmácia</option><option value="perfumaria"${p.segmento==='perfumaria'?' selected':''}>Perfumaria</option><option value="petshop"${p.segmento==='petshop'?' selected':''}>Petshop</option><option value="outro"${p.segmento==='outro'?' selected':''}>Outro</option></select></div>
+    <div class="form-group"><label>Status</label><select id="f-status"><option value="levantamento"${p.status==='levantamento'?' selected':''}>Levantamento</option><option value="parametrizacao"${p.status==='parametrizacao'?' selected':''}>Parametrização</option><option value="homologacao"${p.status==='homologacao'?' selected':''}>Homologação</option><option value="treinamento"${p.status==='treinamento'?' selected':''}>Treinamento</option><option value="golive"${p.status==='golive'?' selected':''}>Go-live</option><option value="encerrado"${p.status==='encerrado'?' selected':''}>Encerrado</option><option value="pausado"${p.status==='pausado'?' selected':''}>Pausado</option></select></div>
+    <div class="form-group"><label>Cidade</label><input type="text" id="f-cidade" value="${p.cidade||''}" placeholder="São Paulo"></div>
+    <div class="form-group"><label>UF</label><select id="f-uf"><option value="SP"${(p.uf||'SP')==='SP'?' selected':''}>SP</option><option value="MT"${p.uf==='MT'?' selected':''}>MT</option><option value="RJ"${p.uf==='RJ'?' selected':''}>RJ</option><option value="Outro"${p.uf==='Outro'?' selected':''}>Outro</option></select></div>
+    <div class="form-group"><label>Responsável</label><input type="text" id="f-resp" value="${p.responsavel||''}"></div>
+    <div class="form-group"><label>Contato cliente</label><input type="text" id="f-contato" value="${p.contato||''}"></div>
+    <div class="form-group"><label>Data início</label><input type="date" id="f-inicio" value="${p.data_inicio||''}"></div>
+    <div class="form-group"><label>Go-live previsto</label><input type="date" id="f-golive" value="${p.data_golive||''}"></div>
+    <div class="form-group form-full"><label>Observações</label><textarea id="f-obs">${p.obs||''}</textarea></div>
+  </div>`;
+}
+
+function openAddProj(){ editingId=null; showModal('Novo projeto',projForm({}),`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProj()"><i class="ti ti-device-floppy"></i> Salvar</button>`); }
+function openEditProj(id){ editingId=id; const p=S.projetos.find(x=>x.id===id)||{}; showModal('Editar projeto',projForm(p),`<button class="btn btn-danger" onclick="delProj('${id}')"><i class="ti ti-trash"></i> Excluir</button><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProj()"><i class="ti ti-device-floppy"></i> Salvar</button>`); }
+
+async function saveProj(){
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!nome){ alert('Informe o nome.'); return; }
+  const obj={nome,segmento:document.getElementById('f-seg').value,status:document.getElementById('f-status').value,cidade:document.getElementById('f-cidade').value,uf:document.getElementById('f-uf').value,responsavel:document.getElementById('f-resp').value,contato:document.getElementById('f-contato').value,data_inicio:document.getElementById('f-inicio').value||null,data_golive:document.getElementById('f-golive').value||null,obs:document.getElementById('f-obs').value};
+  let error;
+  if(editingId){ ({error}=await sb.from('projetos').update(obj).eq('id',editingId)); }
+  else { ({error}=await sb.from('projetos').insert({...obj,fases:{}})); }
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Projeto salvo!'); await loadAll(); closeModal();
+}
+
+async function delProj(id){
+  if(!confirm('Excluir projeto?')) return;
+  await sb.from('projetos').delete().eq('id',id);
+  toast('Projeto excluído.'); await loadAll(); closeModal();
+  nav('projetos',document.querySelectorAll('.nav-item')[1]);
+}
+
+// ── MODAL / NAV / UTILS ──────────────────────────────────────────────────────
+function showModal(title,body,footer){
+  document.getElementById('modal-title').innerHTML=title+` <button class="btn btn-icon" onclick="closeModal()"><i class="ti ti-x"></i></button>`;
+  document.getElementById('modal-body').innerHTML=body;
+  document.getElementById('modal-footer').innerHTML=footer||'';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-overlay').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
+
+function nav(page,el,title){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById('page-'+page); if(pg) pg.classList.add('active');
+  S.currentPage=page;
+  const titles={dashboard:'<i class="ti ti-layout-dashboard"></i> Dashboard',projetos:'<i class="ti ti-briefcase"></i> Projetos',notas:'<i class="ti ti-notes"></i> Anotações',clientes:'<i class="ti ti-building"></i> Clientes',pendencias:'<i class="ti ti-alert-triangle"></i> Pendências',parametros:'<i class="ti ti-database"></i> Base de Conhecimento'};
+  document.getElementById('page-title').innerHTML=title||titles[page]||page;
+  const showAdd=['projetos','notas','clientes','pendencias','parametros'].includes(page);
+  document.getElementById('btn-add').style.display=showAdd?'inline-flex':'none';
+  const si=document.getElementById('search-input');
+  if(!['projetos','notas','parametros'].includes(page)){ si.style.display='none'; si.value=''; S.searchQ=''; }
+  const renders={projetos:renderProjetos,notas:renderNotas,clientes:renderClientes,pendencias:renderPendencias,parametros:renderParametros};
+  if(renders[page]) renders[page]();
+}
+
+function openAdd(){
+  const map={projetos:openAddProj,notas:()=>newNotaProj(null),clientes:openAddCliente,pendencias:()=>openAddPend(null),parametros:openAddParam};
+  if(map[S.currentPage]) map[S.currentPage]();
+}
+
+function toggleSearch(){
+  const si=document.getElementById('search-input');
+  const vis=si.style.display==='block';
+  si.style.display=vis?'none':'block';
+  if(!vis) si.focus();
+}
+
+function doSearch(v){ S.searchQ=v; const r={projetos:renderProjetos,notas:renderNotas,parametros:renderParametros}; if(r[S.currentPage]) r[S.currentPage](); }
+
+// ── INIT ──────────────────────────────────────────────────────────
+tentarAutoConectar();
+</script>
+</body>
+</html>
