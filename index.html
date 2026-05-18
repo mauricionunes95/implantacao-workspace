@@ -192,30 +192,7 @@ body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--tex
 </head>
 <body>
 
-<!-- ── TELA 1: CONFIGURAÇÃO SUPABASE (primeira vez) ── -->
-<div class="screen" id="screen-config">
-  <div class="auth-box">
-    <div class="auth-logo"><i class="ti ti-building-store"></i> Hipcom Workspace <div class="dot"></div></div>
-    <p class="auth-sub">Primeira configuração — insira as credenciais do Supabase. Feito isso, você e sua equipe farão login com e-mail e senha.</p>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div class="cfg-step">
-        <div class="step-num">Project URL</div>
-        <label>URL do projeto Supabase</label>
-        <input type="text" id="cfg-url" placeholder="https://xxxxxxxxxxx.supabase.co">
-        <small>Settings → API → Project URL</small>
-      </div>
-      <div class="cfg-step">
-        <div class="step-num">Anon Key</div>
-        <label>Chave pública (anon public)</label>
-        <input type="text" id="cfg-key" placeholder="eyJhbGci...">
-        <small>Settings → API → anon public</small>
-      </div>
-      <div class="auth-err" id="cfg-err"></div>
-      <button class="btn btn-primary" style="padding:10px" onclick="salvarConfig()"><i class="ti ti-plug-connected"></i> Salvar e continuar</button>
-    </div>
-  </div>
-</div>
-
+<!-- TELA CONFIG REMOVIDA (credenciais embutidas) -->
 <!-- ── TELA 2: LOGIN ── -->
 <div class="screen" id="screen-login">
   <div class="auth-box">
@@ -362,6 +339,8 @@ body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--tex
 
 <script>
 const { createClient } = supabase;
+const _SB_URL = "https://wolouzabgxokelnexedt.supabase.co";
+const _SB_KEY = "sb_publishable_Rs124pMK6Z0Y10vcEa1qRQ_1MzaX0Kk";
 const CFG_URL = 'hc_sb_url', CFG_KEY = 'hc_sb_key';
 let sb = null;
 let currentUser = null;
@@ -456,9 +435,11 @@ function entrarNoApp(){
 
 // ── DETECTAR LINK DE CONVITE/RESET ──────────────────────────────────────────────
 async function inicializar(){
-  const cfg=getConfig();
-  if(!cfg){mostrarTela('screen-config');return;}
-  sb=createClient(cfg.url,cfg.key);
+  // Credenciais embutidas — sem tela de configuração
+  sb=createClient(_SB_URL,_SB_KEY);
+  // Salva no localStorage para compatibilidade
+  localStorage.setItem('hc_sb_url',_SB_URL);
+  localStorage.setItem('hc_sb_key',_SB_KEY);
 
   // Detecta token de convite ou reset na URL (hash ou query)
   const hash=window.location.hash;
