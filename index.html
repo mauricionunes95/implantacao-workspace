@@ -725,7 +725,7 @@ function renderPendCard(p){
   const resolvida=p.status==='resolvido';
   return `<div class="pend-card" style="${resolvida?'opacity:.55':''}">
     <div class="pend-card-header">
-      <i class="ti ti-${resolvida?'check':'alert-triangle'}" style="color:var(--${resolvida?'green':'amber});font-size:16px"></i>
+      <i class="ti ti-${resolvida?'check':'alert-triangle'}" style="color:var(--${resolvida?'green':'amber'});font-size:16px"></i>
       <span class="pend-card-title">${p.descricao}</span>
       ${total>0?`<span class="pend-progress">${feitos}/${total}</span>`:''}
       ${proj?`<span class="pend-card-proj">${proj.nome}</span>`:''}
