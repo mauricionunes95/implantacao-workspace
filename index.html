@@ -268,6 +268,7 @@ body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--tex
     <div class="nav-item" onclick="nav('pendencias',this)"><i class="ti ti-alert-triangle"></i> Pendências <span class="nav-badge warn" id="badge-pend">0</span></div>
     <div class="nav-item" onclick="nav('parametros',this)"><i class="ti ti-database"></i> Base de Conhecimento</div>
     <div class="user-footer">
+      <div style="font-size:10px;color:var(--text3);text-align:center;padding:0 0 8px;font-family:var(--mono)" id="versao-footer"></div>
       <div class="user-card">
         <div class="user-avatar" id="user-avatar">?</div>
         <div class="user-info">
@@ -353,6 +354,7 @@ body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--tex
 
 <script>
 const { createClient } = supabase;
+const VERSAO = '5.6';
 const _SB_URL = "https://wolouzabgxokelnexedt.supabase.co";
 const _SB_KEY = "sb_publishable_Rs124pMK6Z0Y10vcEa1qRQ_1MzaX0Kk";
 const CFG_URL = 'hc_sb_url', CFG_KEY = 'hc_sb_key';
@@ -439,6 +441,7 @@ async function definirSenha(){
 }
 
 function entrarNoApp(){
+  document.getElementById('versao-footer').textContent = 'v' + VERSAO;
   const email=currentUser?.email||'';
   const nome=email.split('@')[0];
   document.getElementById('user-name').textContent=email;
@@ -643,17 +646,17 @@ function filterNotas(tipo,btn){S.filterNota=tipo;document.querySelectorAll('.tag
 function renderClientes(){
   const el=document.getElementById('clientes-content');
   el.innerHTML=`<div class="section-hdr"><h3><i class="ti ti-building"></i> Clientes</h3><button class="btn btn-primary" onclick="openAddCliente()"><i class="ti ti-plus"></i> Novo</button></div>`;
-  el.innerHTML+=S.clientes.length?`<div style="overflow-x:auto"><table class="db-table"><thead><tr><th>Nome</th><th>Segmento</th><th>UF</th><th>Contato</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead><tbody>${S.clientes.map(c=>`<tr><td title="${c.nome}">${c.nome}</td><td>${segLabel(c.segmento)}</td><td>${c.uf||''}</td><td>${c.contato||'—'}</td><td>${c.telefone||'—'}</td><td>${c.email||'—'}</td><td style="display:flex;gap:4px"><button class="btn btn-icon" onclick="openEditCliente('${c.id}')" title="Editar"><i class="ti ti-edit"></i></button><button class="btn btn-icon btn-danger" onclick="delCliente('${c.id}')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><i class="ti ti-building"></i><p>Nenhum cliente.</p></div>';
+  el.innerHTML+=S.clientes.length?`<div style="overflow-x:auto"><table class="db-table"><thead><tr><th>Nome</th><th>Segmento</th><th>UF</th><th>CNPJ/CPF</th><th>Contato</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead><tbody>${S.clientes.map(c=>`<tr><td title="${c.nome}">${c.nome}</td><td>${segLabel(c.segmento)}</td><td>${c.uf||''}</td><td>${c.cnpj_cpf||'—'}</td><td>${c.contato||'—'}</td><td>${c.telefone||'—'}</td><td style="display:flex;gap:4px"><button class="btn btn-icon" onclick="openEditCliente('${c.id}')" title="Editar"><i class="ti ti-edit"></i></button><button class="btn btn-icon btn-danger" onclick="delCliente('${c.id}')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><i class="ti ti-building"></i><p>Nenhum cliente.</p></div>';
 }
 
 function openAddCliente(){
-  showModal('Novo cliente',`<div class="form-grid"><div class="form-group form-full"><label>Nome *</label><input type="text" id="fc-nome"></div><div class="form-group"><label>Segmento</label><select id="fc-seg"><option value="supermercado">Supermercado</option><option value="farmacia">Farmácia</option><option value="perfumaria">Perfumaria</option><option value="petshop">Petshop</option><option value="outro">Outro</option></select></div><div class="form-group"><label>UF</label><select id="fc-uf"><option value="SP">SP</option><option value="MT">MT</option><option value="RJ">RJ</option><option value="Outro">Outro</option></select></div><div class="form-group"><label>Contato</label><input type="text" id="fc-contato"></div><div class="form-group"><label>Telefone</label><input type="text" id="fc-tel"></div><div class="form-group form-full"><label>E-mail</label><input type="text" id="fc-email"></div></div>`,
+  showModal('Novo cliente',`<div class="form-grid"><div class="form-group form-full"><label>Nome *</label><input type="text" id="fc-nome"></div><div class="form-group"><label>Segmento</label><select id="fc-seg"><option value="supermercado">Supermercado</option><option value="farmacia">Farmácia</option><option value="perfumaria">Perfumaria</option><option value="petshop">Petshop</option><option value="outro">Outro</option></select></div><div class="form-group"><label>UF</label><select id="fc-uf"><option value="SP">SP</option><option value="MT">MT</option><option value="RJ">RJ</option><option value="Outro">Outro</option></select></div><div class="form-group"><label>Contato</label><input type="text" id="fc-contato"></div><div class="form-group"><label>Telefone</label><input type="text" id="fc-tel"></div><div class="form-group form-full"><label>E-mail</label><input type="text" id="fc-email"></div><div class="form-group form-full"><label>CNPJ / CPF</label><input type="text" id="fc-cnpj" placeholder="Ex: 12.345.678/0001-99"></div></div>`,
   `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveCliente()"><i class="ti ti-device-floppy"></i> Salvar</button>`);
 }
 
 async function saveCliente(){
   const nome=document.getElementById('fc-nome').value.trim();if(!nome){alert('Informe o nome.');return;}
-  const{error}=await sb.from('clientes').insert({nome,segmento:document.getElementById('fc-seg').value,uf:document.getElementById('fc-uf').value,contato:document.getElementById('fc-contato').value,telefone:document.getElementById('fc-tel').value,email:document.getElementById('fc-email').value});
+  const{error}=await sb.from('clientes').insert({nome,segmento:document.getElementById('fc-seg').value,uf:document.getElementById('fc-uf').value,contato:document.getElementById('fc-contato').value,telefone:document.getElementById('fc-tel').value,email:document.getElementById('fc-email').value,cnpj_cpf:document.getElementById('fc-cnpj').value});
   if(error){toast('Erro: '+error.message,'error');return;}
   toast('Cliente salvo!');await loadAll();closeModal();
 }
@@ -680,6 +683,7 @@ function openEditCliente(id){
     <div class="form-group"><label>Contato</label><input type="text" id="fc-contato" value="${c.contato||''}"></div>
     <div class="form-group"><label>Telefone</label><input type="text" id="fc-tel" value="${c.telefone||''}"></div>
     <div class="form-group form-full"><label>E-mail</label><input type="text" id="fc-email" value="${c.email||''}"></div>
+    <div class="form-group form-full"><label>CNPJ / CPF</label><input type="text" id="fc-cnpj" value="${c.cnpj_cpf||''}" placeholder="Ex: 12.345.678/0001-99"></div>
   </div>`,
   `<button class="btn btn-danger" onclick="delCliente('${id}');closeModal()"><i class="ti ti-trash"></i> Excluir</button>
    <button class="btn" onclick="closeModal()">Cancelar</button>
@@ -695,7 +699,8 @@ async function saveEditCliente(id){
     uf:document.getElementById('fc-uf').value,
     contato:document.getElementById('fc-contato').value,
     telefone:document.getElementById('fc-tel').value,
-    email:document.getElementById('fc-email').value
+    email:document.getElementById('fc-email').value,
+    cnpj_cpf:document.getElementById('fc-cnpj').value
   }).eq('id',id);
   if(error){toast('Erro: '+error.message,'error');return;}
   toast('Cliente atualizado!');await loadAll();closeModal();
