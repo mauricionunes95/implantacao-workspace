@@ -202,6 +202,13 @@ body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--tex
 .chevron{transition:transform .2s;color:var(--text3);font-size:15px}
 .chevron.open{transform:rotate(180deg)}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+
+/* ── ANIMATED BACKGROUND ── */
+#neural-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+#screen-login{position:relative;}
+#screen-login .auth-box{position:relative;z-index:1;}
+#screen-reset{position:relative;}
+#screen-reset .auth-box{position:relative;z-index:1;}
 </style>
 </head>
 <body>
@@ -209,6 +216,7 @@ body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--tex
 <!-- TELA CONFIG REMOVIDA (credenciais embutidas) -->
 <!-- ── TELA 2: LOGIN ── -->
 <div class="screen" id="screen-login">
+  <canvas id="neural-bg"></canvas>
   <div class="auth-box">
     <div class="auth-logo"><i class="ti ti-building-store"></i> Hipcom Workspace <div class="dot"></div></div>
     <p class="auth-sub">Acesse com seu e-mail e senha.</p>
@@ -354,7 +362,7 @@ body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--tex
 
 <script>
 const { createClient } = supabase;
-const VERSAO = '5.2';
+const VERSAO = '6.0';
 const _SB_URL = "https://wolouzabgxokelnexedt.supabase.co";
 const _SB_KEY = "sb_publishable_Rs124pMK6Z0Y10vcEa1qRQ_1MzaX0Kk";
 const CFG_URL = 'hc_sb_url', CFG_KEY = 'hc_sb_key';
@@ -923,6 +931,101 @@ function doSearch(v){S.searchQ=v;const r={projetos:renderProjetos,notas:renderNo
 
 // ── INIT ──────────────────────────────────────────────
 inicializar();
+
+// ── NEURAL NETWORK ANIMATION ──────────────────────────────────
+(function(){
+  const canvas = document.getElementById('neural-bg');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [], animId;
+  const PARTICLE_COUNT = 70;
+  const MAX_DIST = 160;
+  const COLORS = ['rgba(79,124,255,', 'rgba(62,207,142,', 'rgba(167,139,250,'];
+
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function Particle(){
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = (Math.random() - 0.5) * 0.5;
+    this.r  = Math.random() * 2 + 1.5;
+    this.color = COLORS[Math.floor(Math.random()*COLORS.length)];
+  }
+
+  Particle.prototype.update = function(){
+    this.x += this.vx;
+    this.y += this.vy;
+    if(this.x < 0 || this.x > W) this.vx *= -1;
+    if(this.y < 0 || this.y > H) this.vy *= -1;
+  };
+
+  Particle.prototype.draw = function(){
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+    ctx.fillStyle = this.color + '0.8)';
+    ctx.fill();
+  };
+
+  function init(){
+    resize();
+    particles = [];
+    for(let i=0; i<PARTICLE_COUNT; i++) particles.push(new Particle());
+  }
+
+  function drawLines(){
+    for(let i=0; i<particles.length; i++){
+      for(let j=i+1; j<particles.length; j++){
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < MAX_DIST){
+          const alpha = (1 - dist/MAX_DIST) * 0.35;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = particles[i].color + alpha + ')';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function animate(){
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    drawLines();
+    animId = requestAnimationFrame(animate);
+  }
+
+  // Start when login screen is visible, stop when app opens
+  const observer = new MutationObserver(() => {
+    const loginVisible = document.getElementById('screen-login')?.classList.contains('active');
+    const resetVisible = document.getElementById('screen-reset')?.classList.contains('active');
+    if(loginVisible || resetVisible){
+      if(!animId){ init(); animate(); }
+    } else {
+      if(animId){ cancelAnimationFrame(animId); animId=null; ctx.clearRect(0,0,W,H); }
+    }
+  });
+
+  const screenLogin = document.getElementById('screen-login');
+  if(screenLogin) observer.observe(screenLogin, {attributes:true, attributeFilter:['class']});
+
+  window.addEventListener('resize', () => { resize(); });
+
+  // Auto-start if login is already active on load
+  window.addEventListener('load', () => {
+    if(document.getElementById('screen-login')?.classList.contains('active')){
+      init(); animate();
+    }
+  });
+})();
+
 </script>
 </body>
 </html>
