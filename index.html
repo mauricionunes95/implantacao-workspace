@@ -643,7 +643,7 @@ function filterNotas(tipo,btn){S.filterNota=tipo;document.querySelectorAll('.tag
 function renderClientes(){
   const el=document.getElementById('clientes-content');
   el.innerHTML=`<div class="section-hdr"><h3><i class="ti ti-building"></i> Clientes</h3><button class="btn btn-primary" onclick="openAddCliente()"><i class="ti ti-plus"></i> Novo</button></div>`;
-  el.innerHTML+=S.clientes.length?`<div style="overflow-x:auto"><table class="db-table"><thead><tr><th>Nome</th><th>Segmento</th><th>UF</th><th>Contato</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead><tbody>${S.clientes.map(c=>`<tr><td title="${c.nome}">${c.nome}</td><td>${segLabel(c.segmento)}</td><td>${c.uf||''}</td><td>${c.contato||'—'}</td><td>${c.telefone||'—'}</td><td>${c.email||'—'}</td><td><button class="btn btn-icon btn-danger" onclick="delCliente('${c.id}')"><i class="ti ti-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><i class="ti ti-building"></i><p>Nenhum cliente.</p></div>';
+  el.innerHTML+=S.clientes.length?`<div style="overflow-x:auto"><table class="db-table"><thead><tr><th>Nome</th><th>Segmento</th><th>UF</th><th>Contato</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead><tbody>${S.clientes.map(c=>`<tr><td title="${c.nome}">${c.nome}</td><td>${segLabel(c.segmento)}</td><td>${c.uf||''}</td><td>${c.contato||'—'}</td><td>${c.telefone||'—'}</td><td>${c.email||'—'}</td><td style="display:flex;gap:4px"><button class="btn btn-icon" onclick="openEditCliente('${c.id}')" title="Editar"><i class="ti ti-edit"></i></button><button class="btn btn-icon btn-danger" onclick="delCliente('${c.id}')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><i class="ti ti-building"></i><p>Nenhum cliente.</p></div>';
 }
 
 function openAddCliente(){
@@ -658,7 +658,48 @@ async function saveCliente(){
   toast('Cliente salvo!');await loadAll();closeModal();
 }
 
-async function delCliente(id){if(!confirm('Excluir?'))return;await sb.from('clientes').delete().eq('id',id);toast('Excluído.');await loadAll();}
+async function delCliente(id){if(!confirm('Excluir cliente?'))return;await sb.from('clientes').delete().eq('id',id);toast('Excluído.');await loadAll();}
+
+function openEditCliente(id){
+  const c=S.clientes.find(x=>x.id===id);if(!c)return;
+  showModal('Editar cliente',`<div class="form-grid">
+    <div class="form-group form-full"><label>Nome *</label><input type="text" id="fc-nome" value="${c.nome}"></div>
+    <div class="form-group"><label>Segmento</label><select id="fc-seg">
+      <option value="supermercado"${c.segmento==='supermercado'?' selected':''}>Supermercado</option>
+      <option value="farmacia"${c.segmento==='farmacia'?' selected':''}>Farmácia</option>
+      <option value="perfumaria"${c.segmento==='perfumaria'?' selected':''}>Perfumaria</option>
+      <option value="petshop"${c.segmento==='petshop'?' selected':''}>Petshop</option>
+      <option value="outro"${c.segmento==='outro'?' selected':''}>Outro</option>
+    </select></div>
+    <div class="form-group"><label>UF</label><select id="fc-uf">
+      <option value="SP"${c.uf==='SP'?' selected':''}>SP</option>
+      <option value="MT"${c.uf==='MT'?' selected':''}>MT</option>
+      <option value="RJ"${c.uf==='RJ'?' selected':''}>RJ</option>
+      <option value="Outro"${c.uf==='Outro'?' selected':''}>Outro</option>
+    </select></div>
+    <div class="form-group"><label>Contato</label><input type="text" id="fc-contato" value="${c.contato||''}"></div>
+    <div class="form-group"><label>Telefone</label><input type="text" id="fc-tel" value="${c.telefone||''}"></div>
+    <div class="form-group form-full"><label>E-mail</label><input type="text" id="fc-email" value="${c.email||''}"></div>
+  </div>`,
+  `<button class="btn btn-danger" onclick="delCliente('${id}');closeModal()"><i class="ti ti-trash"></i> Excluir</button>
+   <button class="btn" onclick="closeModal()">Cancelar</button>
+   <button class="btn btn-primary" onclick="saveEditCliente('${id}')"><i class="ti ti-device-floppy"></i> Salvar</button>`);
+}
+
+async function saveEditCliente(id){
+  const nome=document.getElementById('fc-nome').value.trim();
+  if(!nome){alert('Informe o nome.');return;}
+  const{error}=await sb.from('clientes').update({
+    nome,
+    segmento:document.getElementById('fc-seg').value,
+    uf:document.getElementById('fc-uf').value,
+    contato:document.getElementById('fc-contato').value,
+    telefone:document.getElementById('fc-tel').value,
+    email:document.getElementById('fc-email').value
+  }).eq('id',id);
+  if(error){toast('Erro: '+error.message,'error');return;}
+  toast('Cliente atualizado!');await loadAll();closeModal();
+}
 
 // ── PENDÊNCIAS ──────────────────────────────────────────────
 function renderPendencias(){
